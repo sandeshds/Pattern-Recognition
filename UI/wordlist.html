@@ -1,0 +1,139 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <style>
+  body {
+    margin: 0px;
+    padding: 0px;
+  }
+  </style>
+</head>
+<body>
+  <link rel="stylesheet" href="css/main.css">
+  <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+  <script src="http://d3lp1msu2r81bx.cloudfront.net/kjs/js/lib/kinetic-v5.0.1.min.js"></script>
+  <div class="wordBar"></div>
+  <div id="container"></div>
+  <script defer="defer">
+  var layer = new Kinetic.Layer();
+  var globalId = "random"
+  var isDetecting = true;
+  var isDrawing = false;
+  var newLine = false;
+  var line;
+  var previousLetter="";
+  var currentWord="";
+  var inLetter = false;
+  function getMousePos(canvas, evt) {
+    return {
+      x: evt.pageX,
+      y: evt.pageY
+    };
+  };
+  function toggleDetection(){
+    if (isDetecting){
+      isDetecting=false;
+    }else{
+      isDetecting = true;
+    }
+  };
+  function checkForPossibleOptions(letter){
+    if((letter.id()!= globalId)&&(isDetecting)){
+          //means we are at a different letter
+          newLine = true;
+          globalId = letter.id();
+        }
+      };
+
+      function buildStage() {
+        var initialCoordinates = {x:100,y:100};
+        var alphabets = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", 
+        "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+        alphabets.forEach(function(entry) {
+          initialCoordinates["x"] += 100;
+          if (initialCoordinates["x"] > 1200){
+            initialCoordinates["x"]=200;
+            initialCoordinates["y"]+=200;
+          }
+          var letter = new Kinetic.Text({
+            id : entry,
+            x: initialCoordinates["x"],
+            y: initialCoordinates["y"],
+            text: entry,
+            fontSize: 90,
+            fontFamily: 'Calibri',
+            fill: 'green'
+          });
+
+          letter.on('mouseover', function() {
+            var _this = this;
+            timer = setTimeout(function(){
+              if(isDetecting){
+                currentWord += _this.id();
+              }
+              checkForPossibleOptions(_this);
+              _this.attrs["fill"] = "blue"
+            }, 1000);
+          });
+          letter.on('mouseenter', function() {
+            inLetter = true;
+          });
+
+          letter.on('mouseout', function() {
+            clearTimeout(timer);
+          });
+          layer.add(letter);
+        });
+
+stage.add(layer);
+};
+
+var stage = new Kinetic.Stage({
+  container: 'container',
+  width: 1300,
+  height: 1300
+});
+
+stage.on('mousemove', function(evt) {
+
+  var pos = getMousePos(this, evt);
+  if(isDetecting){
+    if(!newLine){
+      line.getPoints()[2] = pos.x;
+      line.getPoints()[3] = pos.y;
+      //update current line coordinates
+    }
+    else{
+      if(line){
+        line.setVisible(false);
+        layer.draw();
+      }
+      line = new Kinetic.Line({
+        points: [pos.x, pos.y, pos.x, pos.y],
+        stroke: 'black',
+        strokeWidth: 5,
+        lineCap: 'round',
+        lineJoin: 'round'
+      });
+      newLine = false;
+    }
+  }
+        layer.add(line);
+        layer.drawScene();
+});
+
+stage.on('mousedown', function() {
+  layer.draw();
+  toggleDetection();
+  if(!isDetecting){
+      //end-of-word reached,add it to bar
+      $(".wordBar").text(currentWord+ " ");
+    }
+  line = null;
+
+  });
+
+buildStage();
+</script>
+</body>
+</html>
